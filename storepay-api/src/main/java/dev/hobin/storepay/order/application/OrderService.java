@@ -5,6 +5,7 @@ import dev.hobin.storepay.catalog.domain.Product;
 import dev.hobin.storepay.common.exception.BusinessException;
 import dev.hobin.storepay.common.exception.ErrorCode;
 import dev.hobin.storepay.order.domain.Order;
+import dev.hobin.storepay.order.domain.OrderQueryRepository;
 import dev.hobin.storepay.order.domain.OrderRepository;
 import dev.hobin.storepay.order.domain.OrderSearchCondition;
 import dev.hobin.storepay.store.application.StoreService;
@@ -23,6 +24,7 @@ import org.springframework.transaction.annotation.Transactional;
 public class OrderService {
 
     private final OrderRepository orderRepository;
+    private final OrderQueryRepository orderQueryRepository;
     private final StoreService storeService;
     private final ProductService productService;
 
@@ -57,7 +59,7 @@ public class OrderService {
     }
 
     public Page<Order> search(OrderSearchCondition condition, Pageable pageable) {
-        return orderRepository.search(condition, pageable);
+        return orderQueryRepository.search(condition, pageable);
     }
 
     /** 주문 생성 입력 한 줄. 프레젠테이션 DTO를 서비스까지 끌고 내려오지 않기 위한 커맨드 타입. */

@@ -42,6 +42,12 @@ docker compose up -d postgres
 통합 테스트는 Testcontainers로 실제 PostgreSQL 16을 띄워 **Flyway 마이그레이션과 JPA 매핑이
 서로 맞는지까지** 검증하며, Docker가 없는 환경에서는 실패 대신 건너뜁니다.
 
+> colima를 쓴다면 소켓 경로를 알려줘야 Testcontainers가 Docker를 인식합니다.
+> ```bash
+> export DOCKER_HOST="unix://$HOME/.colima/default/docker.sock"
+> export TESTCONTAINERS_DOCKER_SOCKET_OVERRIDE=/var/run/docker.sock
+> ```
+
 ## 설계 메모
 
 구현하면서 내린 판단들을 적어 둡니다. 코드만으로는 "왜 이렇게 했는지"가 안 보이는 것들입니다.
@@ -71,6 +77,16 @@ POS 단말은 물리적으로 가맹점 손에 있고, 요청을 조작해 1원 
 ① 조건에 맞는 주문 ID 페이지를 먼저 뽑고 ② 그 ID로 항목을 fetch join 하는 2단계로 나눕니다.
 쿼리는 두 번이지만 N+1도 없고 페이징도 정확합니다.
 `PageableExecutionUtils`로 count 쿼리가 불필요한 경우엔 아예 날리지 않습니다.
+
+### 조건 검색은 Spring Data 프래그먼트가 아니라 포트로 붙였다
+
+QueryDSL 조건 검색을 `OrderRepositoryImpl` 같은 Spring Data 커스텀 프래그먼트로 붙이면,
+구현체가 **인터페이스와 같은 패키지에 있어야만** 탐색됩니다
+(다른 패키지에 두면 `No property 'search' found for type 'Order'`로 기동이 실패합니다).
+그 제약을 따르면 QueryDSL 코드가 도메인 패키지로 끌려 들어옵니다.
+
+그래서 `OrderQueryRepository`를 도메인이 선언하는 포트로 두고,
+QueryDSL 구현은 `infrastructure`에 어댑터로 뒀습니다. 의존 방향이 한쪽으로만 흐릅니다.
 
 ### 외부 식별자와 PK를 분리한다
 
