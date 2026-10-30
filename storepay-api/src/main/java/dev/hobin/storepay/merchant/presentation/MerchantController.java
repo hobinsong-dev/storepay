@@ -3,7 +3,7 @@ package dev.hobin.storepay.merchant.presentation;
 import dev.hobin.storepay.common.response.ApiResponse;
 import dev.hobin.storepay.merchant.application.MerchantService;
 import dev.hobin.storepay.merchant.presentation.dto.MerchantRequest;
-import dev.hobin.storepay.merchant.presentation.dto.MerchantResponse;
+import dev.hobin.storepay.merchant.application.dto.MerchantResponse;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
@@ -29,19 +29,18 @@ public class MerchantController {
     @PostMapping
     @ResponseStatus(HttpStatus.CREATED)
     public ApiResponse<MerchantResponse> register(@Valid @RequestBody MerchantRequest.Register request) {
-        return ApiResponse.ok(
-                MerchantResponse.from(merchantService.register(request.name(), request.businessNumber())));
+        return ApiResponse.ok(merchantService.register(request.name(), request.businessNumber()));
     }
 
     @Operation(summary = "가맹점 활성화")
     @PostMapping("/{merchantKey}/activate")
     public ApiResponse<MerchantResponse> activate(@PathVariable String merchantKey) {
-        return ApiResponse.ok(MerchantResponse.from(merchantService.activate(merchantKey)));
+        return ApiResponse.ok(merchantService.activate(merchantKey));
     }
 
     @Operation(summary = "가맹점 단건 조회")
     @GetMapping("/{merchantKey}")
     public ApiResponse<MerchantResponse> get(@PathVariable String merchantKey) {
-        return ApiResponse.ok(MerchantResponse.from(merchantService.getByKey(merchantKey)));
+        return ApiResponse.ok(merchantService.getByKey(merchantKey));
     }
 }

@@ -3,7 +3,7 @@ package dev.hobin.storepay.store.presentation;
 import dev.hobin.storepay.common.response.ApiResponse;
 import dev.hobin.storepay.store.application.StoreService;
 import dev.hobin.storepay.store.presentation.dto.StoreRequest;
-import dev.hobin.storepay.store.presentation.dto.StoreResponse;
+import dev.hobin.storepay.store.application.dto.StoreResponse;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
@@ -29,13 +29,12 @@ public class StoreController {
     @PostMapping
     @ResponseStatus(HttpStatus.CREATED)
     public ApiResponse<StoreResponse> open(@Valid @RequestBody StoreRequest.Open request) {
-        return ApiResponse.ok(StoreResponse.from(
-                storeService.open(request.merchantKey(), request.name(), request.address())));
+        return ApiResponse.ok(storeService.open(request.merchantKey(), request.name(), request.address()));
     }
 
     @Operation(summary = "매장 단건 조회")
     @GetMapping("/{storeKey}")
     public ApiResponse<StoreResponse> get(@PathVariable String storeKey) {
-        return ApiResponse.ok(StoreResponse.from(storeService.getByKey(storeKey)));
+        return ApiResponse.ok(storeService.getByKey(storeKey));
     }
 }

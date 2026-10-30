@@ -1,4 +1,4 @@
-package dev.hobin.storepay.order.presentation.dto;
+package dev.hobin.storepay.common.response;
 
 import java.util.List;
 import java.util.function.Function;

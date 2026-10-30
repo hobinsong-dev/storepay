@@ -1,6 +1,7 @@
-package dev.hobin.storepay.order.presentation.dto;
+package dev.hobin.storepay.order.application.dto;
 
 import dev.hobin.storepay.order.domain.Order;
+import dev.hobin.storepay.order.domain.OrderItem;
 import dev.hobin.storepay.order.domain.OrderStatus;
 import java.math.BigDecimal;
 import java.time.Instant;
@@ -31,7 +32,7 @@ public record OrderResponse(
             int quantity,
             BigDecimal lineAmount) {
 
-        static Item from(dev.hobin.storepay.order.domain.OrderItem item) {
+        static Item from(OrderItem item) {
             return new Item(
                     item.getProduct().getProductKey(),
                     item.getProductName(),

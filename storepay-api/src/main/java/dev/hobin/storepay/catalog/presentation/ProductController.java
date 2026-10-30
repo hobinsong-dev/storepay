@@ -2,7 +2,7 @@ package dev.hobin.storepay.catalog.presentation;
 
 import dev.hobin.storepay.catalog.application.ProductService;
 import dev.hobin.storepay.catalog.presentation.dto.ProductRequest;
-import dev.hobin.storepay.catalog.presentation.dto.ProductResponse;
+import dev.hobin.storepay.catalog.application.dto.ProductResponse;
 import dev.hobin.storepay.common.response.ApiResponse;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -30,8 +30,7 @@ public class ProductController {
     @PostMapping
     @ResponseStatus(HttpStatus.CREATED)
     public ApiResponse<ProductResponse> create(@Valid @RequestBody ProductRequest.Create request) {
-        return ApiResponse.ok(ProductResponse.from(
-                productService.create(request.storeKey(), request.name(), request.unitPrice())));
+        return ApiResponse.ok(productService.create(request.storeKey(), request.name(), request.unitPrice()));
     }
 
     @Operation(summary = "상품 판매 상태 변경")
@@ -39,13 +38,12 @@ public class ProductController {
     public ApiResponse<ProductResponse> changeStatus(
             @PathVariable String productKey,
             @Valid @RequestBody ProductRequest.ChangeStatus request) {
-        return ApiResponse.ok(
-                ProductResponse.from(productService.changeStatus(productKey, request.status())));
+        return ApiResponse.ok(productService.changeStatus(productKey, request.status()));
     }
 
     @Operation(summary = "상품 단건 조회")
     @GetMapping("/{productKey}")
     public ApiResponse<ProductResponse> get(@PathVariable String productKey) {
-        return ApiResponse.ok(ProductResponse.from(productService.getByKey(productKey)));
+        return ApiResponse.ok(productService.getByKey(productKey));
     }
 }

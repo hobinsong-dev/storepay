@@ -1,4 +1,4 @@
-package dev.hobin.storepay.merchant.presentation.dto;
+package dev.hobin.storepay.merchant.application.dto;
 
 import dev.hobin.storepay.merchant.domain.Merchant;
 import dev.hobin.storepay.merchant.domain.MerchantStatus;

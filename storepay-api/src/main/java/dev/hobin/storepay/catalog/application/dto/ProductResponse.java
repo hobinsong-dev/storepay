@@ -1,4 +1,4 @@
-package dev.hobin.storepay.catalog.presentation.dto;
+package dev.hobin.storepay.catalog.application.dto;
 
 import dev.hobin.storepay.catalog.domain.Product;
 import dev.hobin.storepay.catalog.domain.ProductStatus;

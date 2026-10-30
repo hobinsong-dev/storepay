@@ -16,7 +16,7 @@
 | 데이터베이스 | PostgreSQL 16, Flyway (스키마 버전 관리) |
 | 문서화 | springdoc-openapi (Swagger UI) |
 | 테스트 | JUnit 5, AssertJ, Testcontainers |
-| 운영 | Spring Actuator, Docker multi-stage build, GitHub Actions |
+| 운영 | Spring Actuator, Docker multi-stage build (jlink), GitHub Actions |
 
 ## 실행
 
@@ -78,6 +78,22 @@ POS 단말은 물리적으로 가맹점 손에 있고, 요청을 조작해 1원 
 쿼리는 두 번이지만 N+1도 없고 페이징도 정확합니다.
 `PageableExecutionUtils`로 count 쿼리가 불필요한 경우엔 아예 날리지 않습니다.
 
+### 응답 DTO 는 트랜잭션 안에서 만든다
+
+`open-in-view: false` 이므로 컨트롤러가 돌 때는 영속성 컨텍스트가 이미 닫혀 있습니다.
+서비스가 엔티티를 반환하고 컨트롤러에서 DTO 로 매핑하면,
+지연 로딩 필드에 닿는 순간 `LazyInitializationException` 이 납니다.
+
+조회 API 라면 500 하나로 끝나지만 **쓰기 API 에서는 훨씬 나쁩니다.**
+주문 취소를 예로 들면 트랜잭션은 이미 커밋돼 DB 상태는 `CANCELED` 인데
+응답만 500 으로 나갑니다. 클라이언트는 실패로 알고 재시도하고, 서버는 이미 취소된 상태입니다.
+결제 시스템에서 가장 피해야 할 종류의 불일치입니다.
+
+그래서 응답 DTO 조립을 애플리케이션 레이어(`@Transactional` 안)로 내렸습니다.
+엔티티는 레이어 밖으로 나가지 않습니다.
+`OrderApiIntegrationTest` 는 `@Transactional` 없이 돌아갑니다 —
+테스트에 트랜잭션을 걸면 세션이 열린 채라 이 버그를 못 잡기 때문입니다.
+
 ### 조건 검색은 Spring Data 프래그먼트가 아니라 포트로 붙였다
 
 QueryDSL 조건 검색을 `OrderRepositoryImpl` 같은 Spring Data 커스텀 프래그먼트로 붙이면,
@@ -99,6 +115,14 @@ API는 `ord_lz4k2x_8fh3jq91mv` 같은 키를 노출하고 bigint PK는 내보내
 `ddl-auto: validate`입니다. 엔티티와 실제 스키마가 어긋나면 **기동 단계에서 죽습니다**.
 운영 중에 조용히 틀리는 것보다 낫습니다.
 통합 테스트가 실제 PostgreSQL에 마이그레이션을 돌리므로, SQL 오류는 CI에서 잡힙니다.
+
+### 실행 이미지는 jlink 로 줄였다
+
+풀 JDK 를 그대로 실행 단계에 쓰면 576MB 입니다. 대부분이 런타임에 쓰지 않는 컴파일러와 도구입니다.
+`jlink` 로 실제 필요한 모듈만 골라 런타임을 만들고 `alpine` 위에 얹어 **230MB** 로 줄였습니다.
+
+베이스 이미지는 `amazoncorretto:17-alpine` 입니다.
+`eclipse-temurin` 의 alpine 태그는 amd64 만 제공해서 Apple Silicon 에서 빌드가 깨집니다.
 
 ## 도메인 모델
 

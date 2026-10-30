@@ -1,5 +1,6 @@
 package dev.hobin.storepay.catalog.application;
 
+import dev.hobin.storepay.catalog.application.dto.ProductResponse;
 import dev.hobin.storepay.catalog.domain.Product;
 import dev.hobin.storepay.catalog.domain.ProductRepository;
 import dev.hobin.storepay.catalog.domain.ProductStatus;
@@ -10,6 +11,7 @@ import java.math.BigDecimal;
 import java.util.List;
 import java.util.Map;
 import java.util.function.Function;
+import java.util.stream.Collectors;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -23,30 +25,35 @@ public class ProductService {
     private final StoreService storeService;
 
     @Transactional
-    public Product create(String storeKey, String name, BigDecimal unitPrice) {
-        return productRepository.save(
-                Product.create(storeService.getByKey(storeKey), name, unitPrice));
+    public ProductResponse create(String storeKey, String name, BigDecimal unitPrice) {
+        Product product = productRepository.save(
+                Product.create(storeService.getEntityByKey(storeKey), name, unitPrice));
+        return ProductResponse.from(product);
     }
 
     @Transactional
-    public Product changeStatus(String productKey, ProductStatus status) {
-        Product product = getByKey(productKey);
+    public ProductResponse changeStatus(String productKey, ProductStatus status) {
+        Product product = getEntityByKey(productKey);
         product.changeStatus(status);
-        return product;
+        return ProductResponse.from(product);
     }
 
-    public Product getByKey(String productKey) {
+    public ProductResponse getByKey(String productKey) {
+        return ProductResponse.from(getEntityByKey(productKey));
+    }
+
+    public Product getEntityByKey(String productKey) {
         return productRepository.findByProductKey(productKey)
                 .orElseThrow(() -> new BusinessException(ErrorCode.PRODUCT_NOT_FOUND));
     }
 
     /**
-     * 여러 상품 키를 한 번에 조회한다. 주문 생성 시 항목마다 단건 조회하면 N+1이 되므로
+     * 여러 상품 키를 한 번에 조회한다. 주문 생성 시 항목마다 단건 조회하면 N+1 이 되므로
      * IN 절로 한 번에 읽고, 요청에 있었지만 존재하지 않는 키가 있으면 즉시 실패시킨다.
      */
-    public Map<String, Product> getAllByKeys(List<String> productKeys) {
+    public Map<String, Product> getAllEntitiesByKeys(List<String> productKeys) {
         Map<String, Product> found = productRepository.findAllByProductKeyIn(productKeys).stream()
-                .collect(java.util.stream.Collectors.toMap(Product::getProductKey, Function.identity()));
+                .collect(Collectors.toMap(Product::getProductKey, Function.identity()));
 
         List<String> missing = productKeys.stream().filter(key -> !found.containsKey(key)).toList();
         if (!missing.isEmpty()) {

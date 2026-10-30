@@ -1,12 +1,12 @@
 package dev.hobin.storepay.order.presentation;
 
 import dev.hobin.storepay.common.response.ApiResponse;
+import dev.hobin.storepay.common.response.PageResponse;
 import dev.hobin.storepay.order.application.OrderService;
+import dev.hobin.storepay.order.application.dto.OrderResponse;
 import dev.hobin.storepay.order.domain.OrderSearchCondition;
 import dev.hobin.storepay.order.domain.OrderStatus;
 import dev.hobin.storepay.order.presentation.dto.OrderRequest;
-import dev.hobin.storepay.order.presentation.dto.OrderResponse;
-import dev.hobin.storepay.order.presentation.dto.PageResponse;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -42,23 +42,23 @@ public class OrderController {
     @PostMapping
     @ResponseStatus(HttpStatus.CREATED)
     public ApiResponse<OrderResponse> place(@Valid @RequestBody OrderRequest.Place request) {
-        return ApiResponse.ok(OrderResponse.from(orderService.place(
+        return ApiResponse.ok(orderService.place(
                 request.storeKey(),
                 request.items().stream()
                         .map(item -> new OrderService.OrderLineCommand(item.productKey(), item.quantity()))
-                        .toList())));
+                        .toList()));
     }
 
     @Operation(summary = "주문 단건 조회")
     @GetMapping("/{orderKey}")
     public ApiResponse<OrderResponse> get(@PathVariable String orderKey) {
-        return ApiResponse.ok(OrderResponse.from(orderService.getByKey(orderKey)));
+        return ApiResponse.ok(orderService.getByKey(orderKey));
     }
 
     @Operation(summary = "주문 취소")
     @PostMapping("/{orderKey}/cancel")
     public ApiResponse<OrderResponse> cancel(@PathVariable String orderKey) {
-        return ApiResponse.ok(OrderResponse.from(orderService.cancel(orderKey)));
+        return ApiResponse.ok(orderService.cancel(orderKey));
     }
 
     @Operation(summary = "주문 검색", description = "지정한 조건만 WHERE 절에 적용된다.")
@@ -79,7 +79,6 @@ public class OrderController {
                 storeKey, status, orderedFrom, orderedTo, minAmount, maxAmount);
         PageRequest pageRequest = PageRequest.of(Math.max(page, 0), Math.min(Math.max(size, 1), MAX_PAGE_SIZE));
 
-        return ApiResponse.ok(
-                PageResponse.of(orderService.search(condition, pageRequest), OrderResponse::from));
+        return ApiResponse.ok(orderService.search(condition, pageRequest));
     }
 }
