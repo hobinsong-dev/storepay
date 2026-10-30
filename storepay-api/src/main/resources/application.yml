@@ -30,6 +30,16 @@ spring:
   jackson:
     default-property-inclusion: non_null
 
+storepay:
+  pg:
+    base-url: ${PG_BASE_URL:http://localhost:8090}
+    api-key: ${PG_API_KEY:local-test-key}
+    webhook-secret: ${PG_WEBHOOK_SECRET:local-test-secret}
+    connect-timeout: 2s
+    read-timeout: 10s
+    max-attempts: 2
+    webhook-tolerance: 5m
+
 management:
   endpoints:
     web:

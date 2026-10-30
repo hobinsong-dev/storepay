@@ -30,7 +30,25 @@ public enum ErrorCode {
     ORDER_NOT_FOUND("ORDER_404", HttpStatus.NOT_FOUND, "주문을 찾을 수 없습니다."),
     ORDER_EMPTY_ITEMS("ORDER_400", HttpStatus.BAD_REQUEST, "주문 항목이 비어 있습니다."),
     ORDER_ITEM_STORE_MISMATCH("ORDER_400_1", HttpStatus.BAD_REQUEST, "다른 매장의 상품은 같은 주문에 담을 수 없습니다."),
-    ORDER_INVALID_STATUS("ORDER_409", HttpStatus.CONFLICT, "현재 주문 상태에서는 처리할 수 없습니다.");
+    ORDER_INVALID_STATUS("ORDER_409", HttpStatus.CONFLICT, "현재 주문 상태에서는 처리할 수 없습니다."),
+
+    // 결제
+    PAYMENT_NOT_FOUND("PAYMENT_404", HttpStatus.NOT_FOUND, "결제 건을 찾을 수 없습니다."),
+    PAYMENT_INVALID_STATUS("PAYMENT_409", HttpStatus.CONFLICT, "현재 결제 상태에서는 처리할 수 없습니다."),
+    PAYMENT_INVALID_CANCEL_AMOUNT("PAYMENT_400", HttpStatus.BAD_REQUEST, "취소 금액이 올바르지 않습니다."),
+    PAYMENT_ALREADY_EXISTS("PAYMENT_409_1", HttpStatus.CONFLICT, "이미 결제가 진행된 주문입니다."),
+    PAYMENT_PG_FAILED("PAYMENT_502", HttpStatus.BAD_GATEWAY, "결제사 승인에 실패했습니다."),
+    PAYMENT_PG_UNAVAILABLE("PAYMENT_504", HttpStatus.GATEWAY_TIMEOUT, "결제사와 통신할 수 없습니다."),
+
+    // 멱등성
+    IDEMPOTENCY_KEY_REQUIRED("IDEMPOTENCY_400", HttpStatus.BAD_REQUEST, "Idempotency-Key 헤더가 필요합니다."),
+    IDEMPOTENCY_KEY_CONFLICT("IDEMPOTENCY_409", HttpStatus.CONFLICT,
+            "같은 Idempotency-Key 로 다른 내용의 요청이 들어왔습니다."),
+    IDEMPOTENCY_IN_PROGRESS("IDEMPOTENCY_409_1", HttpStatus.CONFLICT, "같은 요청이 처리 중입니다."),
+
+    // 웹훅
+    WEBHOOK_INVALID_SIGNATURE("WEBHOOK_401", HttpStatus.UNAUTHORIZED, "웹훅 서명이 올바르지 않습니다."),
+    WEBHOOK_STALE_TIMESTAMP("WEBHOOK_401_1", HttpStatus.UNAUTHORIZED, "웹훅 타임스탬프가 허용 범위를 벗어났습니다.");
 
     private final String code;
     private final HttpStatus status;
