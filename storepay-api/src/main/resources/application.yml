@@ -73,3 +73,13 @@ springdoc:
 logging:
   level:
     dev.hobin.storepay: DEBUG
+  # 추적 키를 패턴에 박아 둔다. 코드에서 매번 파라미터로 붙이면 빠뜨린 줄이 생기고,
+  # 하필 그 줄이 장애 때 필요한 줄이 된다. 값이 없으면 '-' 로 자리를 유지한다.
+  pattern:
+    console: "%d{yyyy-MM-dd'T'HH:mm:ss.SSSXXX} %5p [%X{requestId:--} %X{paymentKey:--}] [%t] %-40.40logger{39} : %m%n%wEx"
+  # 운영에서는 ECS JSON 한 줄로 내보낸다(LOG_FORMAT=ecs). 사람이 읽는 형식 그대로 수집기에
+  # 넣으면 requestId 로 검색할 수 없어 추적 키를 붙여 둔 의미가 사라진다.
+  # 이 값이 설정되면 위 pattern 은 무시된다. MDC 는 ECS 포맷에 자동으로 포함된다.
+  structured:
+    format:
+      console: ${LOG_FORMAT:}

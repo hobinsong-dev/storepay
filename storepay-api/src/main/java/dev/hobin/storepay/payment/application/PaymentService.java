@@ -3,6 +3,7 @@ package dev.hobin.storepay.payment.application;
 import dev.hobin.storepay.common.exception.BusinessException;
 import dev.hobin.storepay.common.exception.ErrorCode;
 import dev.hobin.storepay.common.idempotency.IdempotencyService;
+import dev.hobin.storepay.common.observability.PaymentMetrics;
 import dev.hobin.storepay.payment.application.dto.PaymentResponse;
 import dev.hobin.storepay.payment.domain.Payment;
 import dev.hobin.storepay.payment.domain.PaymentMethod;
@@ -25,6 +26,7 @@ public class PaymentService {
     private final IdempotencyService idempotencyService;
     private final PaymentApprover paymentApprover;
     private final PgClient pgClient;
+    private final PaymentMetrics metrics;
 
     /**
      * 결제 승인.
@@ -60,6 +62,8 @@ public class PaymentService {
             // 처리에 실패했으면 선점을 풀어 같은 키로 다시 시도할 수 있게 한다.
             // 풀지 않으면 클라이언트가 영원히 IDEMPOTENCY_IN_PROGRESS 만 받는다.
             idempotencyService.release(idempotencyKey);
+            metrics.approveFailed(method, errorCodeOf(e));
+            log.warn("승인 실패: orderKey={}, error={}", orderKey, errorCodeOf(e), e);
             throw e;
         }
 
@@ -79,15 +83,25 @@ public class PaymentService {
                     "취소 가능 금액을 초과했습니다. 요청: %s, 가능: %s".formatted(amount, cancelable));
         }
 
-        PgClient.CancelResult result = pgClient.cancel(new PgClient.CancelCommand(
-                payment.getPaymentKey(), payment.getPgTransactionId(), amount, reason));
+        PgClient.CancelResult result = metrics.recordPgCall("cancel",
+                () -> pgClient.cancel(new PgClient.CancelCommand(
+                        payment.getPaymentKey(), payment.getPgTransactionId(), amount, reason)));
 
         payment.cancel(amount, reason, result.pgCancelId(), result.canceledAt());
+        metrics.canceled(payment.getMethod());
+        log.info("취소 완료: paymentKey={}, amount={}, 잔액={}",
+                paymentKey, amount, payment.cancelableAmount());
         return PaymentResponse.from(payment);
     }
 
     public PaymentResponse getByKey(String paymentKey) {
         return PaymentResponse.from(getEntityByKey(paymentKey));
+    }
+
+    private static String errorCodeOf(RuntimeException e) {
+        return e instanceof BusinessException business
+                ? business.getErrorCode().getCode()
+                : ErrorCode.INTERNAL_ERROR.getCode();
     }
 
     private Payment getEntityByKey(String paymentKey) {

@@ -2,6 +2,7 @@ package dev.hobin.storepay.settlement.application;
 
 import dev.hobin.storepay.common.exception.BusinessException;
 import dev.hobin.storepay.common.exception.ErrorCode;
+import dev.hobin.storepay.common.observability.ReconciliationMetrics;
 import dev.hobin.storepay.settlement.application.dto.ReconciliationResponse;
 import dev.hobin.storepay.settlement.domain.PgSettlementClient;
 import dev.hobin.storepay.settlement.domain.ReconciliationMismatch;
@@ -39,6 +40,7 @@ public class ReconciliationService {
     private final SettlementQueryRepository queryRepository;
     private final PgSettlementClient pgSettlementClient;
     private final BusinessDay businessDay;
+    private final ReconciliationMetrics metrics;
     private final Clock clock;
 
     /**
@@ -75,6 +77,7 @@ public class ReconciliationService {
         } catch (RuntimeException e) {
             // 결제사를 못 부른 것은 "불일치 0건"이 아니다. 실패로 남겨야 정산이 막힌다.
             run.fail(e.getMessage(), clock.instant());
+            metrics.failed();
             log.warn("결제사 거래내역 조회 실패. businessDate={}", businessDate, e);
             return ReconciliationResponse.from(run);
         }
@@ -83,6 +86,8 @@ public class ReconciliationService {
         run.complete(internal.size(), pgTransactions.size(),
                 internal.size() - run.getMismatches().size(), clock.instant());
 
+        run.getMismatches().forEach(mismatch -> metrics.mismatch(mismatch.getType()));
+        metrics.completed(run.getMismatchCount());
         log.info("대사 완료. businessDate={}, 내부={}건, 결제사={}건, 불일치={}건",
                 businessDate, run.getInternalCount(), run.getPgCount(), run.getMismatchCount());
         return ReconciliationResponse.from(run);

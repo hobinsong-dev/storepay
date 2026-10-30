@@ -3,6 +3,7 @@ package dev.hobin.storepay.webhook.application;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import dev.hobin.storepay.common.exception.BusinessException;
 import dev.hobin.storepay.common.exception.ErrorCode;
+import dev.hobin.storepay.common.observability.RequestContext;
 import dev.hobin.storepay.payment.domain.Payment;
 import dev.hobin.storepay.payment.domain.PaymentRepository;
 import dev.hobin.storepay.payment.domain.PaymentStatus;
@@ -12,6 +13,7 @@ import java.math.BigDecimal;
 import java.time.Instant;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.slf4j.MDC;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -43,6 +45,9 @@ public class PgWebhookService {
         }
 
         Payload payload = parse(rawBody);
+        // 웹훅은 POS 요청과 별개의 HTTP 요청으로 들어온다. 결제 키를 MDC 에 올려야
+        // "승인은 됐는데 웹훅이 뭘 했는지"를 같은 키로 이어서 볼 수 있다.
+        MDC.put(RequestContext.PAYMENT_KEY, payload.paymentKey());
 
         try {
             webhookEventRepository.saveAndFlush(
@@ -67,11 +72,13 @@ public class PgWebhookService {
                 .map(payment -> {
                     if (payment.getStatus() != PaymentStatus.READY) {
                         // 동기 응답으로 이미 처리됐다. 정상적인 경우이며 아무것도 하지 않는다.
+                        // 그래도 한 줄은 남긴다 — 웹훅이 왔다는 사실 자체가 안 보이면
+                        // "결제사가 웹훅을 안 쏜다"는 문의에 로그로 답할 수 없다.
+                        log.info("웹훅 수신, 이미 처리된 결제라 건너뜀: status={}", payment.getStatus());
                         return Result.ALREADY_SETTLED;
                     }
                     payment.approve(payload.transactionId(), payload.occurredAt());
-                    log.info("웹훅으로 승인 복구: paymentKey={}, transactionId={}",
-                            payload.paymentKey(), payload.transactionId());
+                    log.info("웹훅으로 승인 복구: transactionId={}", payload.transactionId());
                     return Result.RECONCILED;
                 })
                 .orElseThrow(() -> {
@@ -79,7 +86,7 @@ public class PgWebhookService {
                     // 여기서 조용히 성공(2xx)으로 넘기면 방금 저장한 중복 방지 기록 때문에
                     // 결제사의 재전송까지 DUPLICATE 로 걸러져, 결제가 영원히 READY 로 남는다.
                     // 예외로 롤백해 기록을 지우고 비(非)2xx 를 돌려줘 재전송을 유도한다.
-                    log.warn("아직 보이지 않는 결제 건의 웹훅. 재전송 유도: paymentKey={}", payload.paymentKey());
+                    log.warn("아직 보이지 않는 결제 건의 웹훅. 재전송 유도");
                     return new BusinessException(ErrorCode.WEBHOOK_PAYMENT_NOT_READY,
                             "결제 건을 찾을 수 없습니다: %s".formatted(payload.paymentKey()));
                 });

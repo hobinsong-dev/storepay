@@ -1,11 +1,13 @@
 package dev.hobin.storepay.settlement.application;
 
 import dev.hobin.storepay.common.exception.BusinessException;
+import dev.hobin.storepay.common.observability.RequestContext;
 import dev.hobin.storepay.settlement.application.dto.ReconciliationResponse;
 import java.time.Clock;
 import java.time.LocalDate;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.slf4j.MDC;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
@@ -34,6 +36,17 @@ public class DailySettlementJob {
     @Scheduled(cron = "${storepay.settlement.schedule.cron}", zone = "Asia/Seoul")
     public void run() {
         LocalDate businessDate = businessDay.today(clock.instant()).minusDays(1);
+        // 스케줄러 스레드는 RequestIdFilter 를 타지 않아 추적 키가 비어 있다.
+        // 배치 로그도 한 번의 실행으로 묶여야 해서 직접 넣고 직접 지운다.
+        MDC.put(RequestContext.REQUEST_ID, "batch-settlement-" + businessDate);
+        try {
+            runFor(businessDate);
+        } finally {
+            MDC.remove(RequestContext.REQUEST_ID);
+        }
+    }
+
+    private void runFor(LocalDate businessDate) {
         log.info("전일 대사·정산 배치 시작. businessDate={}", businessDate);
 
         ReconciliationResponse reconciliation;
