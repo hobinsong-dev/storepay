@@ -48,7 +48,9 @@ public enum ErrorCode {
 
     // 웹훅
     WEBHOOK_INVALID_SIGNATURE("WEBHOOK_401", HttpStatus.UNAUTHORIZED, "웹훅 서명이 올바르지 않습니다."),
-    WEBHOOK_STALE_TIMESTAMP("WEBHOOK_401_1", HttpStatus.UNAUTHORIZED, "웹훅 타임스탬프가 허용 범위를 벗어났습니다.");
+    WEBHOOK_STALE_TIMESTAMP("WEBHOOK_401_1", HttpStatus.UNAUTHORIZED, "웹훅 타임스탬프가 허용 범위를 벗어났습니다."),
+    WEBHOOK_PAYMENT_NOT_READY("WEBHOOK_409", HttpStatus.CONFLICT,
+            "아직 알 수 없는 결제 건입니다. 잠시 후 재전송해 주세요.");
 
     private final String code;
     private final HttpStatus status;

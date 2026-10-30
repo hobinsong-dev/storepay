@@ -61,7 +61,8 @@ public class OrderService {
         return PageResponse.of(orderQueryRepository.search(condition, pageable), OrderResponse::from);
     }
 
-    private Order getEntityByKey(String orderKey) {
+    /** 결제 등 다른 애그리게잇이 주문을 참조할 때 쓴다. 호출 측 트랜잭션 안에서만 유효하다. */
+    public Order getEntityByKey(String orderKey) {
         return orderRepository.findByOrderKey(orderKey)
                 .orElseThrow(() -> new BusinessException(ErrorCode.ORDER_NOT_FOUND));
     }

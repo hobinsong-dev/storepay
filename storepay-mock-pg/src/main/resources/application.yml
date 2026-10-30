@@ -1,0 +1,17 @@
+server:
+  port: ${SERVER_PORT:8090}
+
+spring:
+  application:
+    name: storepay-mock-pg
+
+mock-pg:
+  api-key: ${PG_API_KEY:local-test-key}
+  webhook-secret: ${PG_WEBHOOK_SECRET:local-test-secret}
+  webhook-url: ${PG_WEBHOOK_URL:http://localhost:8080/api/v1/webhooks/pg}
+  # 0 이면 지연 없음. 타임아웃 동작을 보려면 늘린다.
+  approve-latency: ${PG_APPROVE_LATENCY:0ms}
+
+logging:
+  level:
+    dev.hobin.mockpg: DEBUG
