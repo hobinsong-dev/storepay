@@ -1,0 +1,17 @@
+[versions]
+springBoot = "3.5.16"
+springDependencyManagement = "1.1.7"
+querydsl = "5.1.0"
+springdoc = "2.8.6"
+resilience4j = "2.2.0"
+testcontainers = "1.20.6"
+
+[libraries]
+querydsl-jpa = { module = "com.querydsl:querydsl-jpa", version.ref = "querydsl" }
+querydsl-apt = { module = "com.querydsl:querydsl-apt", version.ref = "querydsl" }
+springdoc-openapi = { module = "org.springdoc:springdoc-openapi-starter-webmvc-ui", version.ref = "springdoc" }
+resilience4j-spring-boot3 = { module = "io.github.resilience4j:resilience4j-spring-boot3", version.ref = "resilience4j" }
+
+[plugins]
+spring-boot = { id = "org.springframework.boot", version.ref = "springBoot" }
+spring-dependency-management = { id = "io.spring.dependency-management", version.ref = "springDependencyManagement" }
