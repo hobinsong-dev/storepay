@@ -25,6 +25,7 @@ public class PgController {
 
     private final MockPgProperties properties;
     private final WebhookSender webhookSender;
+    private final PgLedger ledger;
 
     @PostMapping("/approve")
     public ResponseEntity<?> approve(
@@ -45,6 +46,7 @@ public class PgController {
         String transactionId = "pgtx_" + UUID.randomUUID().toString().replace("-", "").substring(0, 16);
         Instant approvedAt = Instant.now();
         log.info("승인: paymentKey={}, transactionId={}", request.paymentKey(), transactionId);
+        ledger.recordApproval(request.paymentKey(), transactionId, request.amount(), approvedAt);
 
         webhookSender.send("PAYMENT_APPROVED", request.paymentKey(), transactionId, request.amount(), approvedAt);
         return ResponseEntity.ok(new ApproveResponse(true, transactionId, approvedAt, null));
@@ -60,6 +62,7 @@ public class PgController {
         }
         String cancelId = "pgcl_" + UUID.randomUUID().toString().replace("-", "").substring(0, 16);
         log.info("취소: transactionId={}, amount={}", request.transactionId(), request.amount());
+        ledger.recordCancel(request.transactionId(), request.amount());
         return ResponseEntity.ok(new CancelResponse(cancelId, Instant.now()));
     }
 

@@ -50,7 +50,22 @@ public enum ErrorCode {
     WEBHOOK_INVALID_SIGNATURE("WEBHOOK_401", HttpStatus.UNAUTHORIZED, "웹훅 서명이 올바르지 않습니다."),
     WEBHOOK_STALE_TIMESTAMP("WEBHOOK_401_1", HttpStatus.UNAUTHORIZED, "웹훅 타임스탬프가 허용 범위를 벗어났습니다."),
     WEBHOOK_PAYMENT_NOT_READY("WEBHOOK_409", HttpStatus.CONFLICT,
-            "아직 알 수 없는 결제 건입니다. 잠시 후 재전송해 주세요.");
+            "아직 알 수 없는 결제 건입니다. 잠시 후 재전송해 주세요."),
+
+    // 대사
+    RECONCILIATION_NOT_FOUND("RECONCILIATION_404", HttpStatus.NOT_FOUND, "대사 결과를 찾을 수 없습니다."),
+    RECONCILIATION_FUTURE_DATE("RECONCILIATION_400", HttpStatus.BAD_REQUEST,
+            "아직 끝나지 않은 영업일은 대사할 수 없습니다."),
+    RECONCILIATION_PG_UNAVAILABLE("RECONCILIATION_503", HttpStatus.SERVICE_UNAVAILABLE,
+            "결제사 거래내역을 가져오지 못했습니다."),
+
+    // 정산
+    SETTLEMENT_NOT_FOUND("SETTLEMENT_404", HttpStatus.NOT_FOUND, "정산을 찾을 수 없습니다."),
+    SETTLEMENT_ALREADY_PAID("SETTLEMENT_409", HttpStatus.CONFLICT, "이미 지급된 정산입니다."),
+    SETTLEMENT_RECONCILIATION_REQUIRED("SETTLEMENT_409_1", HttpStatus.CONFLICT,
+            "대사가 끝나고 불일치가 없는 영업일만 정산할 수 있습니다."),
+    SETTLEMENT_ALREADY_CLOSED("SETTLEMENT_409_2", HttpStatus.CONFLICT,
+            "이미 마감된 영업일입니다. 다시 집계하려면 기존 정산을 먼저 취소해야 합니다.");
 
     private final String code;
     private final HttpStatus status;

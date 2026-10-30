@@ -40,6 +40,21 @@ storepay:
     max-attempts: 2
     webhook-tolerance: 5m
 
+  settlement:
+    # 영업일 경계를 자르는 타임존. 서버 기본값(컨테이너는 보통 UTC)을 쓰면
+    # 경계가 9시간 밀려 하루치 정산이 통째로 어긋난다.
+    zone: Asia/Seoul
+    default-fee-rate: 0.023
+    fee-rates:
+      CARD: 0.023
+      EASY_PAY: 0.028
+      BANK_TRANSFER: 0.010
+    # 전날 영업일을 새벽에 대사한다. 결제사 내역이 올라오기 전에 돌리면
+    # 전 건이 MISSING_IN_PG 로 잡히므로 충분히 늦춘다.
+    schedule:
+      enabled: ${SETTLEMENT_SCHEDULE_ENABLED:false}
+      cron: "0 30 4 * * *"
+
 management:
   endpoints:
     web:
